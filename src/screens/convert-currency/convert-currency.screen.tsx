@@ -199,12 +199,13 @@ export const ConvertCurrencyScreen = ({
                 />
               )}
 
-              {!!convertedResult?.result && (
-                <AppText
-                  variant="h1"
-                  text={`${convertedResult.result?.result} ${exchangeData.to?.symbol}`}
-                />
-              )}
+              {!!convertedResult?.result &&
+                !!convertedResult?.result?.query.amount && (
+                  <AppText
+                    variant="h1"
+                    text={`${convertedResult.result?.result} ${exchangeData.to?.symbol}`}
+                  />
+                )}
             </View>
           </View>
         </TouchableWithoutFeedback>
