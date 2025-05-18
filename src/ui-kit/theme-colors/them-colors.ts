@@ -1,0 +1,8 @@
+export const THEME_COLORS = {
+  WHITE: '#FFFFFF',
+  BLACK: '#000000',
+  BACKGROUND: '#F5F5F5',
+  LIGHT_GRAY: '#E7E7E7',
+  GRAY: '#DEDEDE',
+  RED: '#E64646',
+};
