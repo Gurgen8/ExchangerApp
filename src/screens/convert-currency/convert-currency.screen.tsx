@@ -36,9 +36,9 @@ export const ConvertCurrencyScreen = ({
   navigation,
 }: TStackNavigationScreenProps<EStackNavigationRoutes.ConvertCurrency>) => {
   const {exchangeData, swapExchange} = useExchangeContext();
-  const [latestCurrencyRates] = useLatestCurrencyRatesState();
-
   const {isOfflineMode} = useAppStateContext();
+
+  const [latestCurrencyRates] = useLatestCurrencyRatesState();
 
   const [convertedResult, setConvertedResult] = useState<TConvertedResult>();
 
@@ -47,6 +47,7 @@ export const ConvertCurrencyScreen = ({
       exchangePosition: EExchangePosition.from,
     });
   }, [navigation]);
+
   const onToSelectPress = useCallback(() => {
     navigation.navigate(EStackNavigationRoutes.SelectCurrency, {
       exchangePosition: EExchangePosition.to,
@@ -67,22 +68,20 @@ export const ConvertCurrencyScreen = ({
         }
 
         try {
-          if (isOfflineMode) {
-            if (isOfflineMode) {
-              setConvertedResult({
-                result: {
-                  result: offlineConvertCurrency(
-                    JSON.parse(latestCurrencyRates as string),
-                    exchangeData.from.code,
-                    exchangeData.to.code,
-                    convertedResult?.result?.query.amount,
-                  ),
+          if (isOfflineMode && latestCurrencyRates) {
+            setConvertedResult({
+              result: {
+                result: offlineConvertCurrency(
+                  JSON.parse(latestCurrencyRates as string),
+                  exchangeData.from.code,
+                  exchangeData.to.code,
+                  convertedResult?.result?.query.amount,
+                ),
 
-                  query: {amount: convertedResult?.result?.query.amount},
-                },
-              });
-              return;
-            }
+                query: {amount: convertedResult?.result?.query.amount},
+              },
+            });
+            return;
           }
           const result = await convertCurrency({
             from: exchangeData.from.code,
@@ -118,7 +117,7 @@ export const ConvertCurrencyScreen = ({
       }
 
       try {
-        if (isOfflineMode) {
+        if (isOfflineMode && latestCurrencyRates) {
           setConvertedResult({
             result: {
               result: offlineConvertCurrency(
@@ -127,7 +126,6 @@ export const ConvertCurrencyScreen = ({
                 exchangeData.to.code,
                 +newAmount,
               ),
-
               query: {amount: +newAmount},
             },
           });
@@ -179,7 +177,6 @@ export const ConvertCurrencyScreen = ({
                 onPress={onToSelectPress}
               />
             </View>
-
             <View>
               <AppText offsetBottom={8} text="Amount:" variant="p1" />
               <Input
@@ -198,7 +195,6 @@ export const ConvertCurrencyScreen = ({
                   text={`${convertedResult?.result?.query.amount}${exchangeData.from?.symbol} =`}
                 />
               )}
-
               {!!convertedResult?.result &&
                 !!convertedResult?.result?.query.amount && (
                   <AppText
