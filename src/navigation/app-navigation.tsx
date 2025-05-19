@@ -19,6 +19,10 @@ export const AppNavigation = () => {
       try {
         const res = await getLatestCurrencies();
 
+        if (!res) {
+          return;
+        }
+
         setLatestCurrencyRatesState(JSON.stringify(res.rates));
       } catch (error) {
         console.log(error);

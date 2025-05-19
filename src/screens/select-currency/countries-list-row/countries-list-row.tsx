@@ -1,6 +1,12 @@
 import React, {FC, memo} from 'react';
 
-import {Image, TouchableOpacity, View} from 'react-native';
+import {
+  Image,
+  StyleProp,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
 import {StyleSheet} from 'react-native';
 
 import {TCurrencyData} from '@/context';
@@ -14,16 +20,26 @@ export interface TCountriesListRowProps {
   disabled: boolean;
 }
 
+const getStyles = (isSelected: boolean, isDisabled: boolean) => {
+  const resStyles: StyleProp<ViewStyle> = [styles.row];
+
+  if (isSelected) {
+    resStyles.push(styles.selectedRow);
+  }
+
+  if (isDisabled) {
+    resStyles.push(styles.disableRow);
+  }
+
+  return resStyles;
+};
+
 export const CountriesListRow: FC<TCountriesListRowProps> = memo(
   ({isSelected, onSelect, data, disabled}) => (
     <TouchableOpacity
       disabled={disabled}
       onPress={() => onSelect(data)}
-      style={
-        isSelected
-          ? [styles.row, styles.selectedRow]
-          : [styles.row, disabled ? styles.disableRow : []]
-      }>
+      style={getStyles(isSelected, disabled)}>
       <View style={styles.leftView}>
         <Image style={styles.image} source={{uri: data.flagSrc}} />
         <AppText

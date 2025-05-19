@@ -12,7 +12,7 @@ import {
 
 import countriesData from '@/assets/data/currencies.json';
 import {ArrowLeftIcon, MagnifyingGlassIcon} from '@/assets/icons';
-import {TCurrencyData, useExchangeContext} from '@/context';
+import {EExchangePosition, TCurrencyData, useExchangeContext} from '@/context';
 import {debounce} from '@/helpers';
 import {
   EStackNavigationRoutes,
@@ -24,9 +24,9 @@ import {AppText, Input, THEME_COLORS} from '@/ui-kit';
 import {CountriesListRow} from './countries-list-row/countries-list-row';
 
 const reversedPositions = {
-  from: 'to',
-  to: 'from',
-} as const;
+  [EExchangePosition.from]: EExchangePosition.to,
+  [EExchangePosition.to]: EExchangePosition.from,
+};
 
 const keyExtractor: FlatListProps<TCurrencyData>['keyExtractor'] = item =>
   item.code;
@@ -41,17 +41,35 @@ export const SelectCurrencyScreen = ({
   const {exchangeData, selectCurrency} = useExchangeContext();
   const [search, setSearch] = useState('');
 
+  const filteredCountries = useMemo(
+    () =>
+      countriesData.filter(
+        country =>
+          country.name.toLowerCase().includes(search) ||
+          country.code.toLowerCase().includes(search) ||
+          country.symbol.toLowerCase().includes(search),
+      ),
+    [search],
+  );
+
   const handleSelectCurrency = (selectedItemData: TCurrencyData) => {
-    if (!JSON.parse(latestCurrencyRates as string)?.[selectedItemData?.code]) {
-      Alert.alert('Currency not available!!');
+    try {
+      if (
+        !latestCurrencyRates ||
+        !JSON.parse(latestCurrencyRates)?.[selectedItemData?.code]
+      ) {
+        throw new Error('Currency not available!!');
+      }
 
-      return;
-    }
+      selectCurrency?.({data: selectedItemData, type: exchangePosition});
 
-    selectCurrency?.({data: selectedItemData, type: exchangePosition});
-
-    if (navigation.canGoBack()) {
-      navigation.goBack();
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert(error.message);
+      }
     }
   };
 
@@ -62,29 +80,11 @@ export const SelectCurrencyScreen = ({
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSetSearch = useCallback(
+  const handleTextChange = useCallback(
     debounce((text: string) => {
       setSearch(text.toLowerCase());
     }, 300),
     [],
-  );
-
-  const handleTextChange = useCallback(
-    (text: string) => {
-      debouncedSetSearch(text);
-    },
-    [debouncedSetSearch],
-  );
-
-  const filteredCountries = useMemo(
-    () =>
-      countriesData.filter(
-        country =>
-          country.name.toLowerCase().includes(search) ||
-          country.code.toLowerCase().includes(search) ||
-          country.symbol.toLowerCase().includes(search),
-      ),
-    [search],
   );
 
   const renderItem: ListRenderItem<TCurrencyData> = ({item}) => (

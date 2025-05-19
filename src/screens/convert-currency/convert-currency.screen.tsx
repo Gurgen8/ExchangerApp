@@ -2,6 +2,7 @@ import React, {useCallback, useState} from 'react';
 
 import {useFocusEffect} from '@react-navigation/native';
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -24,7 +25,6 @@ import {
   EStackNavigationRoutes,
   TStackNavigationScreenProps,
 } from '@/navigation';
-import {useLatestCurrencyRatesState} from '@/storage';
 import {AppText, Input, Select} from '@/ui-kit';
 
 interface TConvertedResult {
@@ -37,8 +37,6 @@ export const ConvertCurrencyScreen = ({
 }: TStackNavigationScreenProps<EStackNavigationRoutes.ConvertCurrency>) => {
   const {exchangeData, swapExchange} = useExchangeContext();
   const {isOfflineMode} = useAppStateContext();
-
-  const [latestCurrencyRates] = useLatestCurrencyRatesState();
 
   const [convertedResult, setConvertedResult] = useState<TConvertedResult>();
 
@@ -54,74 +52,19 @@ export const ConvertCurrencyScreen = ({
     });
   }, [navigation]);
 
-  useFocusEffect(
-    useCallback(() => {
-      const initialFetch = async () => {
-        if (
-          !exchangeData.from?.code ||
-          !exchangeData.to?.code ||
-          !convertedResult?.result?.query.amount
-        ) {
-          setConvertedResult({result: null});
-
-          return;
-        }
-
-        try {
-          if (isOfflineMode && latestCurrencyRates) {
-            setConvertedResult({
-              result: {
-                result: offlineConvertCurrency(
-                  JSON.parse(latestCurrencyRates as string),
-                  exchangeData.from.code,
-                  exchangeData.to.code,
-                  convertedResult?.result?.query.amount,
-                ),
-
-                query: {amount: convertedResult?.result?.query.amount},
-              },
-            });
-            return;
-          }
-          const result = await convertCurrency({
-            from: exchangeData.from.code,
-            to: exchangeData.to.code,
-            amount: convertedResult?.result?.query.amount,
-          });
-
-          if (result) {
-            setConvertedResult({result});
-          }
-        } catch (error) {
-          setConvertedResult({
-            errorMessage: 'Conversation failed',
-            result: null,
-          });
-        }
-      };
-
-      initialFetch();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [exchangeData.from?.code, exchangeData.to?.code, isOfflineMode]),
-  );
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleAmountChange = useCallback(
-    debounce(async (newAmount: string) => {
-      if (!exchangeData.from?.code || !exchangeData.to?.code) {
-        if (!newAmount && convertedResult?.result) {
-          setConvertedResult({result: null});
-        }
+  const countConvertedAmount = useCallback(
+    async (newAmount?: string) => {
+      if (!exchangeData.from?.code || !exchangeData.to?.code || !newAmount) {
+        setConvertedResult(prev => ({...prev, result: null}));
 
         return;
       }
 
       try {
-        if (isOfflineMode && latestCurrencyRates) {
+        if (isOfflineMode) {
           setConvertedResult({
             result: {
               result: offlineConvertCurrency(
-                JSON.parse(latestCurrencyRates as string),
                 exchangeData.from.code,
                 exchangeData.to.code,
                 +newAmount,
@@ -129,8 +72,10 @@ export const ConvertCurrencyScreen = ({
               query: {amount: +newAmount},
             },
           });
+
           return;
         }
+
         const result = await convertCurrency({
           from: exchangeData.from.code,
           to: exchangeData.to.code,
@@ -141,11 +86,36 @@ export const ConvertCurrencyScreen = ({
           setConvertedResult({result});
         }
       } catch (error) {
-        setConvertedResult({errorMessage: 'Conversation failed', result: null});
+        if (error instanceof Error) {
+          Alert.alert(error.message);
+          setConvertedResult(prev => ({...prev, result: null}));
+
+          return;
+        }
+
+        setConvertedResult({
+          errorMessage: 'Conversation failed',
+          result: null,
+        });
       }
-    }, 300),
+    },
     [exchangeData, isOfflineMode],
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      const currentAmount = convertedResult?.result?.query.amount;
+      countConvertedAmount(
+        currentAmount ? currentAmount.toString() : undefined,
+      );
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [exchangeData.from?.code, exchangeData.to?.code, isOfflineMode]),
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleAmountChange = useCallback(debounce(countConvertedAmount, 300), [
+    countConvertedAmount,
+  ]);
 
   const handleCloseKeyboard = () => {
     Keyboard.dismiss();
