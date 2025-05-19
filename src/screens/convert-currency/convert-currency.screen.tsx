@@ -180,14 +180,14 @@ export const ConvertCurrencyScreen = ({
                   text={`${convertedResult?.result?.query.amount}${exchangeData.from?.symbol} =`}
                 />
               )}
-              {!!convertedResult?.result &&
-                !!convertedResult?.result?.query.amount &&
-                !convertedResult?.loading && (
-                  <AppText
-                    variant="h1"
-                    text={`${convertedResult.result?.result} ${exchangeData.to?.symbol}`}
-                  />
-                )}
+              {!!convertedResult?.result?.query.amount && (
+                <AppText
+                  variant="h1"
+                  text={`${convertedResult.result?.result} ${
+                    exchangeData.to?.symbol
+                  }`}
+                />
+              )}
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -215,6 +215,5 @@ const styles = StyleSheet.create({
   },
   resultExchange: {
     marginTop: 24,
-    height: 130,
   },
 });
