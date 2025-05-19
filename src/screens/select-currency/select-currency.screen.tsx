@@ -39,7 +39,7 @@ export const SelectCurrencyScreen = ({
   const [latestCurrencyRates] = useLatestCurrencyRatesState();
 
   const {exchangeData, selectCurrency} = useExchangeContext();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState<string>('');
 
   const filteredCountries = useMemo(
     () =>

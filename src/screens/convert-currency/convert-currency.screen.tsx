@@ -30,6 +30,7 @@ import {AppText, Input, Select} from '@/ui-kit';
 interface TConvertedResult {
   result: TConvertCurrencyResponse | null;
   errorMessage?: null | string;
+  loading?: boolean;
 }
 
 export const ConvertCurrencyScreen = ({
@@ -54,8 +55,14 @@ export const ConvertCurrencyScreen = ({
 
   const countConvertedAmount = useCallback(
     async (newAmount?: string) => {
+      setConvertedResult(prev => ({
+        ...prev,
+        result: prev?.result ?? null,
+        loading: true,
+      }));
+
       if (!exchangeData.from?.code || !exchangeData.to?.code || !newAmount) {
-        setConvertedResult(prev => ({...prev, result: null}));
+        setConvertedResult(prev => ({...prev, result: null, loading: false}));
 
         return;
       }
@@ -97,6 +104,12 @@ export const ConvertCurrencyScreen = ({
           errorMessage: 'Conversation failed',
           result: null,
         });
+      } finally {
+        setConvertedResult(prev => ({
+          ...prev,
+          result: prev?.result ?? null,
+          loading: false,
+        }));
       }
     },
     [exchangeData, isOfflineMode],
@@ -136,7 +149,9 @@ export const ConvertCurrencyScreen = ({
                 flagSrc={exchangeData.from?.flagSrc}
                 onPress={onFromSelectPress}
               />
-              <TouchableOpacity onPress={swapExchange}>
+              <TouchableOpacity
+                disabled={convertedResult?.loading}
+                onPress={swapExchange}>
                 <SwapIcon style={styles.swapIcon} width={20} height={20} />
               </TouchableOpacity>
               <Select
@@ -166,7 +181,8 @@ export const ConvertCurrencyScreen = ({
                 />
               )}
               {!!convertedResult?.result &&
-                !!convertedResult?.result?.query.amount && (
+                !!convertedResult?.result?.query.amount &&
+                !convertedResult?.loading && (
                   <AppText
                     variant="h1"
                     text={`${convertedResult.result?.result} ${exchangeData.to?.symbol}`}
